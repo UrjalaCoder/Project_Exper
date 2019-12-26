@@ -36,6 +36,8 @@ Renderer::Renderer(int window_width, int window_height) {
             } else {
                 /* Init GLEW */
                 glewInit();
+                // Initialize the OpenGL viewport.
+                glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
             }
         }
     }
@@ -73,45 +75,68 @@ void Renderer::start() {
 }
 
 void Renderer::render() {
-    GLfloat vertices[] =
-    {
-      -0.5f, -0.5f, 0.0f,
-      0.5f, -0.5f, 0.0f,
-      0.0f,  0.5f, 0.0f
-    };
+    std::vector<Vertex3D> vertices = { {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
+    render_trig(vertices);
+}
+
+void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
+    GLfloat vertices[vertex_vector.size() * 3] = { 0.0f };
+
+    for(int i = 0; i < vertex_vector.size(); ++i) {
+        int vertex_index = i * 3;
+        vertices[vertex_index] = vertex_vector[i].x;
+        vertices[vertex_index + 1] = vertex_vector[i].y;
+        vertices[vertex_index + 2] = vertex_vector[i].z;
+    }
+
+    /* Create vertex shaders */
     static const char *vertexShader =
     "#version 330 core\n"
-    "layout(location = 0) in vec2 posAttr;\n"
+    "layout(location = 0) in vec3 aPos;\n"
     "void main() {\n"
-    "gl_Position = vec4(posAttr, 0.0, 1.0); }";
+    "gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0); }";
+    GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShaderID, 1, &vertexShader, nullptr);
+    glCompileShader(vertexShaderID);
+
+    /* Fragment shaders */
     static const char *fragmentShader =
     "#version 330 core\n"
     "out vec4 col;\n"
     "void main() {\n"
-    "col = vec4(1.0, 0.0, 0.0, 1.0); }";
-    GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShaderID, 1, &vertexShader, nullptr);
-    glCompileShader(vertexShaderID);
+    "col = vec4(1.0, 1.0, 1.0, 1.0); }";
     GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShaderID, 1, &fragmentShader , nullptr);
     glCompileShader(fragmentShaderID);
+
+    /* Apply vertex and fragment shaders */
     GLuint shaderProgramID = glCreateProgram();
     glAttachShader(shaderProgramID, vertexShaderID);
     glAttachShader(shaderProgramID, fragmentShaderID);
     glLinkProgram(shaderProgramID);
+
+    /* Detach and delete shaders the we don't need anymore. */
     glDetachShader(shaderProgramID, vertexShaderID);
     glDetachShader(shaderProgramID, fragmentShaderID);
     glDeleteShader(vertexShaderID);
     glDeleteShader(fragmentShaderID);
+
+    /* Create and initialize vertex buffer */
     GLuint vertexBufferID;
     glGenBuffers(1, &vertexBufferID);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), &vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 3 * vertex_vector.size() * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+
+    /* Use the combined shader */
     glUseProgram(shaderProgramID);
+
+    /* Bind the GL array buffer to vertex buffer */
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
     glDrawArrays(GL_TRIANGLES, 0, 3);
+
     glUseProgram(NULL);
     glDisableVertexAttribArray(0);
 
