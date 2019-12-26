@@ -44,6 +44,9 @@ Renderer::Renderer(int window_width, int window_height) {
     }
 
     /* Done initialization! */
+	/* Finally load shaders that we need. */
+	vertex_shader = load_shader("vertex_shader");
+	fragment_shader = load_shader("fragment_shader");
 }
 
 void Renderer::start() {
@@ -98,15 +101,39 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
         vertices[vertex_index + 2] = vertex_vector[i].z;
     }
 
+	const char *vertex_string = vertex_shader.c_str();
+	const char *fragment_string = fragment_shader.c_str();
+
+	// printf("%s\n", fragment_string);
+
     /* Create vertex shaders */
     GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShaderID, 1, &vertexShader, nullptr);
+    glShaderSource(vertexShaderID, 1, &vertex_string, nullptr);
     glCompileShader(vertexShaderID);
 
     /* Fragment shaders */
     GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShaderID, 1, &fragmentShader , nullptr);
+    glShaderSource(fragmentShaderID, 1, &fragment_string, nullptr);
     glCompileShader(fragmentShaderID);
+
+	/* DEBUG Code! */
+	int success;
+	char infoLog[512];
+	glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
+
+	if(!success)
+	{
+	    glGetShaderInfoLog(vertexShaderID, 512, NULL, infoLog);
+	    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+
+	success = 1;
+	glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
+	if(!success) {
+		glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+
 
     /* Apply vertex and fragment shaders */
     GLuint shaderProgramID = glCreateProgram();
@@ -150,4 +177,10 @@ void Renderer::Show_Error(std::string error_message) {
     std::string msg = "Window could not be created: ";
     msg.append(SDL_GetError());
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Init Failed", msg.c_str(), nullptr);
+}
+
+std::string Renderer::load_shader(const char *filename) {
+	std::ifstream in(filename);
+	std::string str((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	return str;
 }
