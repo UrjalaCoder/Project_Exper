@@ -15,6 +15,10 @@ struct Vertex3D {
 	float x, y, z;
 };
 
+struct ColouredVertex3D {
+	float x, y, z, r, g, b;
+};
+
 class Renderer {
 private:
 	unsigned int WINDOW_WIDTH, WINDOW_HEIGHT;
@@ -27,7 +31,7 @@ private:
 	bool debug_mode = false;
 	std::string load_shader(const char *filename);
 	void Show_Error(std::string error_message);
-	void render_trig(std::vector<Vertex3D> vertices, float t);
+	void render_trig(std::vector<ColouredVertex3D> vertices, float t);
 
 	std::string vertex_shader;
 	std::string fragment_shader;

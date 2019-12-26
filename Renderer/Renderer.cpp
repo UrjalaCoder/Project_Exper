@@ -87,20 +87,27 @@ void Renderer::start() {
 }
 
 void Renderer::render(float time) {
-    std::vector<Vertex3D> vertices = {
-        {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
+    std::vector<ColouredVertex3D> vertices = {
+		{-0.5f, 0.0f, 0.0f, 	1.0f, 0.0f, 0.0f},
+		{0.5f, 0.0f, 0.0f, 		0.0f, 1.0f, 0.0f},
+		{0.0f, 0.5f, 0.0f, 		0.0f, 0.0f, 1.0f},
     };
     render_trig(vertices, time);
 }
 
-void Renderer::render_trig(std::vector<Vertex3D> vertex_vector, float time) {
-    GLfloat vertices[vertex_vector.size() * 3] = { 0.0f };
+void Renderer::render_trig(std::vector<ColouredVertex3D> vertex_vector, float time) {
+    GLfloat vertices[vertex_vector.size() * 6] = { 0.0f };
 
     for(int i = 0; i < vertex_vector.size(); ++i) {
-        int vertex_index = i * 3;
+        int vertex_index = i * 6;
         vertices[vertex_index] = vertex_vector[i].x;
         vertices[vertex_index + 1] = vertex_vector[i].y;
         vertices[vertex_index + 2] = vertex_vector[i].z;
+
+		// Colours
+		vertices[vertex_index + 3] = vertex_vector[i].r;
+		vertices[vertex_index + 4] = vertex_vector[i].g;
+		vertices[vertex_index + 5] = vertex_vector[i].b;
     }
 
 
@@ -168,11 +175,17 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector, float time) {
     glUseProgram(shaderProgramID);
 	glUniform4f(vertex_colour_location, 0.0f, green_value, 0.0f, 1.0f);
 
-    /* Bind the GL array buffer to vertex buffer */
+	// Position attributes.
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
+	// Colour attributes.
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+
+	/* Bind the GL array buffer to vertex buffer */
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
     /* Draw! */
 	if(wireframe) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -182,6 +195,7 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector, float time) {
 
     glUseProgram(NULL);
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 
     return;
 }

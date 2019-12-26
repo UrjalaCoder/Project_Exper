@@ -1,4 +1,4 @@
-OBJS = main.cpp Renderer.cpp
+OBJS = main.cpp ./Renderer/Renderer.cpp
 LINK_OBJS = main.o Renderer.o
 LINKER_OPTIONS = -lSDL2 -lGLEW -lGLU -lGL
 OBJ_NAME = exper

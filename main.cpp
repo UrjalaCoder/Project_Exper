@@ -1,4 +1,4 @@
-#include "Renderer.h"
+#include "main.h"
 int main()
 {
     Renderer renderer(640, 480);
