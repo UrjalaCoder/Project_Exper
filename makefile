@@ -1,7 +1,13 @@
-LIBS=-lsfml-graphics -lsfml-window -lsfml-system
-GCC_OPTIONS=-std=c++14
+OBJS = main.cpp
+LINK_OBJS = main.o
+LINKER_OPTIONS = -lSDL2
+OBJ_NAME = exper
 
-all:
+#This is the target that compiles our executable
+all: $(OBJS)
 	@echo "Building"
-	g++ $(GCC_OPTIONS) -c "main.cpp" -o main.o
-	g++ -o exper main.o $(LIBS) 
+	g++ -c -w $(OBJS)
+	g++ -w $(LINK_OBJS) $(LINKER_OPTIONS) -o $(OBJ_NAME)
+	@echo "Cleaning build files"
+	rm -f $(LINK_OBJS)
+	mv $(OBJ_NAME) build/$(OBJ_NAME)

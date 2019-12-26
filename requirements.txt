@@ -1,1 +1,1 @@
-libsfml-dev: (2.4.2+dfsg-4).
+libsdl2-2.0
