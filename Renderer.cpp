@@ -3,6 +3,7 @@ Renderer::Renderer(int window_width, int window_height) {
     WINDOW_WIDTH = window_width;
     WINDOW_HEIGHT = window_height;
 
+
     /* Set OpenGL versions [1, 3] */
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -55,7 +56,12 @@ void Renderer::start() {
         while(SDL_PollEvent(&event) != 0) {
             if(event.type == SDL_QUIT) {
                 running = false;
-            }
+            } else if(event.type == SDL_KEYDOWN) {
+				SDL_Keycode w = event.key.keysym.sym;
+				if(w == 119) {
+					wireframe = !wireframe;
+				}
+			}
         }
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -75,7 +81,10 @@ void Renderer::start() {
 }
 
 void Renderer::render() {
-    std::vector<Vertex3D> vertices = { {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
+    std::vector<Vertex3D> vertices = {
+        {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
+        {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}
+    };
     render_trig(vertices);
 }
 
@@ -90,21 +99,11 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
     }
 
     /* Create vertex shaders */
-    static const char *vertexShader =
-    "#version 330 core\n"
-    "layout(location = 0) in vec3 aPos;\n"
-    "void main() {\n"
-    "gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0); }";
     GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShaderID, 1, &vertexShader, nullptr);
     glCompileShader(vertexShaderID);
 
     /* Fragment shaders */
-    static const char *fragmentShader =
-    "#version 330 core\n"
-    "out vec4 col;\n"
-    "void main() {\n"
-    "col = vec4(1.0, 1.0, 1.0, 1.0); }";
     GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShaderID, 1, &fragmentShader , nullptr);
     glCompileShader(fragmentShaderID);
@@ -125,7 +124,7 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
     GLuint vertexBufferID;
     glGenBuffers(1, &vertexBufferID);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-    glBufferData(GL_ARRAY_BUFFER, 3 * vertex_vector.size() * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     /* Use the combined shader */
     glUseProgram(shaderProgramID);
@@ -135,8 +134,12 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
+    /* Draw! */
+	if(wireframe) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	}
+    glDrawArrays(GL_TRIANGLES, 0, vertex_vector.size());
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glUseProgram(NULL);
     glDisableVertexAttribArray(0);
 
