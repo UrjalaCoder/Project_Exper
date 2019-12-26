@@ -2,6 +2,6 @@
 int main()
 {
     Renderer renderer(640, 480);
-    renderer.start();
+    renderer.render();
     return 0;
 }

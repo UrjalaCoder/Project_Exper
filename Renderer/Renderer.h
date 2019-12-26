@@ -1,15 +1,20 @@
-
 #ifndef RENDERER
+#define RENDERER
 
+#ifndef GL
+#define GL
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
+#endif
+
+#include "../Shader/Shader.h"
+
 #include <string>
 #include <vector>
 #include <fstream>
 #include <iostream>
 #include <ctime>
 
-#define RENDERER
 
 struct Vertex3D {
 	float x, y, z;
@@ -31,15 +36,11 @@ private:
 	bool debug_mode = false;
 	std::string load_shader(const char *filename);
 	void Show_Error(std::string error_message);
-	void render_trig(std::vector<ColouredVertex3D> vertices, float t);
-
-	std::string vertex_shader;
-	std::string fragment_shader;
-	void render(float t);
+	Shader *shader;
 
 public:
     Renderer(int width, int height);
-    void start();
+    void render();
 };
 
 

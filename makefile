@@ -1,5 +1,5 @@
-OBJS = main.cpp ./Renderer/Renderer.cpp
-LINK_OBJS = main.o Renderer.o
+OBJS = main.cpp ./Renderer/Renderer.cpp ./Shader/Shader.cpp
+LINK_OBJS = main.o Renderer.o Shader.o
 LINKER_OPTIONS = -lSDL2 -lGLEW -lGLU -lGL
 OBJ_NAME = exper
 

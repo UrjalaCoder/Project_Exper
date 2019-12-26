@@ -46,16 +46,56 @@ Renderer::Renderer(int window_width, int window_height) {
 
     /* Done initialization! */
 	/* Finally load shaders that we need. */
-	vertex_shader = load_shader("vertex_shader");
-	fragment_shader = load_shader("fragment_shader");
+	shader = new Shader("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
 }
 
-void Renderer::start() {
+void Renderer::render() {
     if(error) {
         Show_Error("Unknown error!");
         return;
     }
-	float time = 0.001f;
+
+	std::vector<ColouredVertex3D> vertex_vector = {
+		{-0.5f, 0.0f, 0.0f, 	1.0f, 0.0f, 0.0f},
+		{0.5f, 0.0f, 0.0f, 		0.0f, 1.0f, 0.0f},
+		{0.0f, 0.5f, 0.0f, 		0.0f, 0.0f, 1.0f},
+    };
+
+	// Setup
+	GLfloat vertices[vertex_vector.size() * 6] = { 0.0f };
+
+    for(int i = 0; i < vertex_vector.size(); ++i) {
+        int vertex_index = i * 6;
+        vertices[vertex_index] = vertex_vector[i].x;
+        vertices[vertex_index + 1] = vertex_vector[i].y;
+        vertices[vertex_index + 2] = vertex_vector[i].z;
+
+		// Colours
+		vertices[vertex_index + 3] = vertex_vector[i].r;
+		vertices[vertex_index + 4] = vertex_vector[i].g;
+		vertices[vertex_index + 5] = vertex_vector[i].b;
+    }
+
+    /* Create and initialize vertex buffer */
+    GLuint vertexBufferID, vertexArrayID;
+
+	glGenVertexArrays(1, &vertexArrayID);
+    glGenBuffers(1, &vertexBufferID);
+
+	glBindVertexArray(vertexArrayID);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Position attributes.
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+	// Colour attributes.
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+
     while(running) {
         while(SDL_PollEvent(&event) != 0) {
             if(event.type == SDL_QUIT) {
@@ -72,12 +112,16 @@ void Renderer::start() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         /* MAIN RENDER HERE! */
-        render(time);
+		shader->use();
+		glBindVertexArray(vertexArrayID);
+		glDrawArrays(GL_TRIANGLES, 0, vertex_vector.size());
 
         SDL_GL_SwapWindow(render_window);
-
-		time += 0.001f;
     }
+
+    glUseProgram(NULL);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 
     SDL_GL_DeleteContext(render_context);
     SDL_DestroyWindow(render_window);
@@ -86,132 +130,8 @@ void Renderer::start() {
     return;
 }
 
-void Renderer::render(float time) {
-    std::vector<ColouredVertex3D> vertices = {
-		{-0.5f, 0.0f, 0.0f, 	1.0f, 0.0f, 0.0f},
-		{0.5f, 0.0f, 0.0f, 		0.0f, 1.0f, 0.0f},
-		{0.0f, 0.5f, 0.0f, 		0.0f, 0.0f, 1.0f},
-    };
-    render_trig(vertices, time);
-}
-
-void Renderer::render_trig(std::vector<ColouredVertex3D> vertex_vector, float time) {
-    GLfloat vertices[vertex_vector.size() * 6] = { 0.0f };
-
-    for(int i = 0; i < vertex_vector.size(); ++i) {
-        int vertex_index = i * 6;
-        vertices[vertex_index] = vertex_vector[i].x;
-        vertices[vertex_index + 1] = vertex_vector[i].y;
-        vertices[vertex_index + 2] = vertex_vector[i].z;
-
-		// Colours
-		vertices[vertex_index + 3] = vertex_vector[i].r;
-		vertices[vertex_index + 4] = vertex_vector[i].g;
-		vertices[vertex_index + 5] = vertex_vector[i].b;
-    }
-
-
-	const char *vertex_string = vertex_shader.c_str();
-	const char *fragment_string = fragment_shader.c_str();
-
-    /* Create vertex shaders */
-    GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShaderID, 1, &vertex_string, nullptr);
-    glCompileShader(vertexShaderID);
-
-    /* Fragment shaders */
-    GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShaderID, 1, &fragment_string, nullptr);
-    glCompileShader(fragmentShaderID);
-
-	/* DEBUG Code! */
-	if(debug_mode) {
-		int success;
-		char infoLog[512];
-		glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
-
-		if(!success)
-		{
-			glGetShaderInfoLog(vertexShaderID, 512, NULL, infoLog);
-			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-		}
-
-		success = 1;
-		glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
-		if(!success) {
-			glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
-			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-		}
-	}
-	/* END DEBUG */
-
-    /* Apply vertex and fragment shaders */
-    GLuint shaderProgramID = glCreateProgram();
-
-
-    glAttachShader(shaderProgramID, vertexShaderID);
-    glAttachShader(shaderProgramID, fragmentShaderID);
-    glLinkProgram(shaderProgramID);
-
-    /* Detach and delete shaders the we don't need anymore. */
-    glDetachShader(shaderProgramID, vertexShaderID);
-    glDetachShader(shaderProgramID, fragmentShaderID);
-    glDeleteShader(vertexShaderID);
-    glDeleteShader(fragmentShaderID);
-
-    /* Create and initialize vertex buffer */
-    GLuint vertexBufferID;
-    glGenBuffers(1, &vertexBufferID);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	/* Apply colour */
-	float green_value = (sin(time) / 2.0f) + 0.5f;
-
-	int vertex_colour_location = glGetUniformLocation(shaderProgramID, "colour");
-	// glUseProgram(shaderProgramID);
-
-    /* Use the combined shader */
-    glUseProgram(shaderProgramID);
-	glUniform4f(vertex_colour_location, 0.0f, green_value, 0.0f, 1.0f);
-
-	// Position attributes.
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), nullptr);
-    glEnableVertexAttribArray(0);
-
-	// Colour attributes.
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-
-	/* Bind the GL array buffer to vertex buffer */
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
-    /* Draw! */
-	if(wireframe) {
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	}
-	glDrawArrays(GL_TRIANGLES, 0, vertex_vector.size());
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    glUseProgram(NULL);
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-
-    return;
-}
-
 void Renderer::Show_Error(std::string error_message) {
     std::string msg = "Window could not be created: ";
     msg.append(SDL_GetError());
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Init Failed", msg.c_str(), nullptr);
-}
-
-std::string Renderer::load_shader(const char *filename) {
-
-	std::string extension(".glsl");
-	std::string full_path = std::string("shaders/") + std::string(filename) + extension;
-
-	std::ifstream in(full_path);
-	std::string str((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-	return str;
 }
