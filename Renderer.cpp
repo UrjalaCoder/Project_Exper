@@ -1,4 +1,5 @@
 #include "Renderer.h"
+
 Renderer::Renderer(int window_width, int window_height) {
     WINDOW_WIDTH = window_width;
     WINDOW_HEIGHT = window_height;
@@ -54,7 +55,7 @@ void Renderer::start() {
         Show_Error("Unknown error!");
         return;
     }
-
+	float time = 0.001f;
     while(running) {
         while(SDL_PollEvent(&event) != 0) {
             if(event.type == SDL_QUIT) {
@@ -71,9 +72,11 @@ void Renderer::start() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         /* MAIN RENDER HERE! */
-        render();
+        render(time);
 
         SDL_GL_SwapWindow(render_window);
+
+		time += 0.001f;
     }
 
     SDL_GL_DeleteContext(render_context);
@@ -83,14 +86,14 @@ void Renderer::start() {
     return;
 }
 
-void Renderer::render() {
+void Renderer::render(float time) {
     std::vector<Vertex3D> vertices = {
         {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
     };
-    render_trig(vertices);
+    render_trig(vertices, time);
 }
 
-void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
+void Renderer::render_trig(std::vector<Vertex3D> vertex_vector, float time) {
     GLfloat vertices[vertex_vector.size() * 3] = { 0.0f };
 
     for(int i = 0; i < vertex_vector.size(); ++i) {
@@ -99,6 +102,7 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
         vertices[vertex_index + 1] = vertex_vector[i].y;
         vertices[vertex_index + 2] = vertex_vector[i].z;
     }
+
 
 	const char *vertex_string = vertex_shader.c_str();
 	const char *fragment_string = fragment_shader.c_str();
@@ -136,6 +140,8 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
 
     /* Apply vertex and fragment shaders */
     GLuint shaderProgramID = glCreateProgram();
+
+
     glAttachShader(shaderProgramID, vertexShaderID);
     glAttachShader(shaderProgramID, fragmentShaderID);
     glLinkProgram(shaderProgramID);
@@ -152,8 +158,15 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+	/* Apply colour */
+	float green_value = (sin(time) / 2.0f) + 0.5f;
+
+	int vertex_colour_location = glGetUniformLocation(shaderProgramID, "colour");
+	// glUseProgram(shaderProgramID);
+
     /* Use the combined shader */
     glUseProgram(shaderProgramID);
+	glUniform4f(vertex_colour_location, 0.0f, green_value, 0.0f, 1.0f);
 
     /* Bind the GL array buffer to vertex buffer */
     glEnableVertexAttribArray(0);
@@ -181,7 +194,8 @@ void Renderer::Show_Error(std::string error_message) {
 
 std::string Renderer::load_shader(const char *filename) {
 
-	std::string full_path = std::string("shaders/") + std::string(filename);
+	std::string extension(".glsl");
+	std::string full_path = std::string("shaders/") + std::string(filename) + extension;
 
 	std::ifstream in(full_path);
 	std::string str((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());

@@ -7,6 +7,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <ctime>
 
 #define RENDERER
 
@@ -26,15 +27,15 @@ private:
 	bool debug_mode = false;
 	std::string load_shader(const char *filename);
 	void Show_Error(std::string error_message);
-	void render_trig(std::vector<Vertex3D> vertices);
+	void render_trig(std::vector<Vertex3D> vertices, float t);
 
 	std::string vertex_shader;
 	std::string fragment_shader;
+	void render(float t);
 
 public:
     Renderer(int width, int height);
     void start();
-    void render();
 };
 
 
