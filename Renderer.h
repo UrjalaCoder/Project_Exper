@@ -23,6 +23,7 @@ private:
 	bool error = false;
 	bool running = true;
 	bool wireframe = false;
+	bool debug_mode = false;
 	std::string load_shader(const char *filename);
 	void Show_Error(std::string error_message);
 	void render_trig(std::vector<Vertex3D> vertices);

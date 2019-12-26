@@ -85,8 +85,7 @@ void Renderer::start() {
 
 void Renderer::render() {
     std::vector<Vertex3D> vertices = {
-        {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
-        {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}
+        {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
     };
     render_trig(vertices);
 }
@@ -104,8 +103,6 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
 	const char *vertex_string = vertex_shader.c_str();
 	const char *fragment_string = fragment_shader.c_str();
 
-	// printf("%s\n", fragment_string);
-
     /* Create vertex shaders */
     GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShaderID, 1, &vertex_string, nullptr);
@@ -117,23 +114,25 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
     glCompileShader(fragmentShaderID);
 
 	/* DEBUG Code! */
-	int success;
-	char infoLog[512];
-	glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
+	if(debug_mode) {
+		int success;
+		char infoLog[512];
+		glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
 
-	if(!success)
-	{
-	    glGetShaderInfoLog(vertexShaderID, 512, NULL, infoLog);
-	    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		if(!success)
+		{
+			glGetShaderInfoLog(vertexShaderID, 512, NULL, infoLog);
+			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		}
+
+		success = 1;
+		glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
+		if(!success) {
+			glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
+			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+		}
 	}
-
-	success = 1;
-	glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
-	if(!success) {
-		glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
+	/* END DEBUG */
 
     /* Apply vertex and fragment shaders */
     GLuint shaderProgramID = glCreateProgram();
@@ -165,8 +164,9 @@ void Renderer::render_trig(std::vector<Vertex3D> vertex_vector) {
 	if(wireframe) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-    glDrawArrays(GL_TRIANGLES, 0, vertex_vector.size());
+	glDrawArrays(GL_TRIANGLES, 0, vertex_vector.size());
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
     glUseProgram(NULL);
     glDisableVertexAttribArray(0);
 
@@ -180,7 +180,10 @@ void Renderer::Show_Error(std::string error_message) {
 }
 
 std::string Renderer::load_shader(const char *filename) {
-	std::ifstream in(filename);
+
+	std::string full_path = std::string("shaders/") + std::string(filename);
+
+	std::ifstream in(full_path);
 	std::string str((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 	return str;
 }
