@@ -1,6 +1,6 @@
-OBJS = main.cpp
-LINK_OBJS = main.o
-LINKER_OPTIONS = -lSDL2
+OBJS = main.cpp Renderer.cpp
+LINK_OBJS = main.o Renderer.o
+LINKER_OPTIONS = -lSDL2 -lGLEW -lGLU -lGL
 OBJ_NAME = exper
 
 #This is the target that compiles our executable
