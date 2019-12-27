@@ -56,6 +56,7 @@ void Renderer::render() {
         return;
     }
 
+
 	std::vector<TexturedVertex3D> vertex_vector = {
 		/* Coordinates				Colors			Texture Pos */
 		{0.5f, 0.5f, 0.0f, 		1.0f, 0.0f, 0.0f, 	1.0f, 1.0f},
@@ -192,6 +193,16 @@ void Renderer::render() {
 
         /* MAIN RENDER HERE! */
 		shader->use();
+		/* Transformation */
+		/* Rotation and scaling */
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(0.75, -0.75, 0.0));
+		trans = glm::rotate(trans, time / 2000.0f, glm::vec3(0.0, 0.0, 1.0));
+		trans = glm::scale(trans, glm::vec3(0.5));
+
+		GLuint transformLoc = glGetUniformLocation(shader->ID, "transform");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
 		shader->set_float("alpha", abs(sin(time / 3200.0f)));
 
 		glBindVertexArray(vertexArrayID);

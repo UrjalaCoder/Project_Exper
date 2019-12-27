@@ -14,8 +14,8 @@
 
 class Shader {
 private:
-	GLuint ID;
 public:
+	GLuint ID;
 	Shader(const GLchar *vertex_path, const GLchar *fragment_path);
 	void use();
 
