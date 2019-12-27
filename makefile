@@ -6,7 +6,7 @@ OBJ_NAME = exper
 # This is the target that compiles our executable
 all: $(OBJS)
 	@echo "Building"
-	g++ -c -w $(OBJS)
+	g++ -c -w $(OBJS) -I.
 	g++ -w $(LINK_OBJS) $(LINKER_OPTIONS) -o $(OBJ_NAME)
 	@echo "Cleaning build files"
 	rm -f $(LINK_OBJS)

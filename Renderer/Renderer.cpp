@@ -89,6 +89,36 @@ void Renderer::render() {
 	}
 	stbi_image_free(data);
 
+	GLuint texture2;
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+
+
+	// Load texture
+	int width2, height2, nr_channels2;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* data2 = stbi_load("awesomeface.png", &width2, &height2, &nr_channels2, 0);
+	if(data2) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width2, height2, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	} else {
+		std::cout << "Failed to load texture!" << std::endl;
+	}
+	stbi_image_free(data2);
+
+	/* Set textures to fragment shader uniforms */
+
+	shader->use();
+	shader->set_int("texture1", 0);
+	shader->set_int("texture2", 1);
+
     for(int i = 0; i < vertex_vector.size(); ++i) {
         int vertex_index = i * 8;
         vertices[vertex_index] = vertex_vector[i].x;
@@ -136,6 +166,7 @@ void Renderer::render() {
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
+	float time = 0.0f;
 
     while(running) {
         while(SDL_PollEvent(&event) != 0) {
@@ -153,13 +184,21 @@ void Renderer::render() {
         glClear(GL_COLOR_BUFFER_BIT);
 
 		// Texture bind.
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
         /* MAIN RENDER HERE! */
 		shader->use();
+		shader->set_float("alpha", abs(sin(time / 3200.0f)));
+
 		glBindVertexArray(vertexArrayID);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         SDL_GL_SwapWindow(render_window);
+		time += 1.0f;
     }
 
     glUseProgram(NULL);
