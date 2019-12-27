@@ -16,12 +16,19 @@
 #include <ctime>
 
 
+// Simple 3D Vertex.
 struct Vertex3D {
 	float x, y, z;
 };
 
+// 3D Vertex with color data.
 struct ColouredVertex3D {
 	float x, y, z, r, g, b;
+};
+
+// 3D Vertex with color and texture data.
+struct TexturedVertex3D {
+	float x, y, z, r, g, b, t, s;
 };
 
 class Renderer {
