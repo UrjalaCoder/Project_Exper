@@ -9,4 +9,6 @@
 
 build
 build/*
+build/exper
+
 !makefile
