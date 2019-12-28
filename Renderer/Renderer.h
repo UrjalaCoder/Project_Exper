@@ -30,9 +30,9 @@ struct ColouredVertex3D {
 	float x, y, z, r, g, b;
 };
 
-// 3D Vertex with color and texture data.
+// 3D Vertex with texture data.
 struct TexturedVertex3D {
-	float x, y, z, r, g, b, t, s;
+	float x, y, z, t, s;
 };
 
 class Renderer {
@@ -47,6 +47,7 @@ private:
 	bool debug_mode = false;
 	std::string load_shader(const char *filename);
 	void Show_Error(std::string error_message);
+	void setTexture(GLuint &texture, const char* filename, bool isAlpha, bool flipped);
 	Shader *shader;
 
 public:
