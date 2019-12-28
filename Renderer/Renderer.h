@@ -48,6 +48,7 @@ private:
 	std::string load_shader(const char *filename);
 	void Show_Error(std::string error_message);
 	void setTexture(GLuint &texture, const char* filename, bool isAlpha, bool flipped);
+	void handle_input();
 	Shader *shader;
 
 public:

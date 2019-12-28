@@ -75,23 +75,38 @@ void Renderer::setTexture(GLuint &texture, const char *filename, bool isAlpha, b
 	stbi_image_free(data);
 }
 
+void Renderer::handle_input() {
+	while(SDL_PollEvent(&event) != 0) {
+		if(event.type == SDL_QUIT) {
+			running = false;
+		} else if(event.type == SDL_KEYDOWN) {
+			SDL_Keycode w = event.key.keysym.sym;
+			if(w == 119) {
+				wireframe = !wireframe;
+			}
+		}
+	}
+}
+
 void Renderer::render() {
     if(error) {
         Show_Error("Unknown error!");
         return;
     }
 
-
-	std::vector<TexturedVertex3D> vertex_vector = {
+	int vertex_count = 4;
+	GLfloat vertices[vertex_count * 5] = {
 		/* Coordinates			Texture Pos */
-		{0.5f, 0.5f, 0.0f,  	1.0f, 1.0f},
-		{0.5f, -0.5f, 0.0f, 	1.0f, 0.0f},
-		{-0.5f, -0.5f, 0.0f, 	0.0f, 0.0f},
-		{-0.5f, 0.5f, 0.0f, 	0.0f, 1.0f}
+		0.5f, 0.5f, 0.0f,  		1.0f, 1.0f,
+		0.5f, -0.5f, 0.0f, 		1.0f, 0.0f,
+		-0.5f, -0.5f, 0.0f, 	0.0f, 0.0f,
+		-0.5f, 0.5f, 0.0f, 		0.0f, 1.0f
     };
 
-	// Vertices setup
-	GLfloat vertices[vertex_vector.size() * 5] = { 0.0f };
+	GLuint indices[] = {
+		0, 1, 3,
+		1, 2, 3
+	};
 
 	// Texture handling.
 	GLuint texture1;
@@ -104,19 +119,6 @@ void Renderer::render() {
 	shader->set_int("texture1", 0);
 	shader->set_int("texture2", 1);
 
-    for(int i = 0; i < vertex_vector.size(); ++i) {
-        int vertex_index = i * 5;
-        vertices[vertex_index] = vertex_vector[i].x;
-        vertices[vertex_index + 1] = vertex_vector[i].y;
-        vertices[vertex_index + 2] = vertex_vector[i].z;
-		vertices[vertex_index + 3] = vertex_vector[i].t;
-		vertices[vertex_index + 4] = vertex_vector[i].s;
-    }
-
-	GLuint indices[] = {
-		0, 1, 3,
-		1, 2, 3
-	};
 
     /* Create and initialize vertex buffer */
     GLuint vertexBufferID, vertexArrayID;
@@ -143,20 +145,9 @@ void Renderer::render() {
 
 	float time = 0.0f;
 
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     while(running) {
-        while(SDL_PollEvent(&event) != 0) {
-            if(event.type == SDL_QUIT) {
-                running = false;
-            } else if(event.type == SDL_KEYDOWN) {
-				SDL_Keycode w = event.key.keysym.sym;
-				if(w == 119) {
-					wireframe = !wireframe;
-				}
-			}
-        }
-
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        handle_input();
 
 		// Texture bind.
 		glActiveTexture(GL_TEXTURE0);
@@ -184,6 +175,8 @@ void Renderer::render() {
 		if(wireframe) {
 			glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		}
+
+        glClear(GL_COLOR_BUFFER_BIT);
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
