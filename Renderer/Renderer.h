@@ -3,15 +3,22 @@
 
 #ifndef GL
 #define GL
+
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
+
 #endif
 
 #include "../Shader/Shader.h"
 
+#ifndef MATRIX
+#define MATRIX
+
 #include "../glm/glm.hpp"
 #include "../glm/gtc/matrix_transform.hpp"
 #include "../glm/gtc/type_ptr.hpp"
+
+#endif
 
 #include <string>
 #include <vector>
@@ -47,7 +54,7 @@ private:
 	bool debug_mode = false;
 	std::string load_shader(const char *filename);
 	void Show_Error(std::string error_message);
-	void setTexture(GLuint &texture, const char* filename, bool isAlpha, bool flipped);
+	void setTexture(GLuint &texture, std::string filename, bool isAlpha, bool flipped);
 	void handle_input();
 	Shader *shader;
 

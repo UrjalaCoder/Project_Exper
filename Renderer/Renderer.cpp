@@ -50,7 +50,7 @@ Renderer::Renderer(int window_width, int window_height) {
 	shader = new Shader("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
 }
 
-void Renderer::setTexture(GLuint &texture, const char *filename, bool isAlpha, bool flipped) {
+void Renderer::setTexture(GLuint &texture, std::string filename, bool isAlpha, bool flipped) {
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -63,7 +63,7 @@ void Renderer::setTexture(GLuint &texture, const char *filename, bool isAlpha, b
 	// Load texture
 	int width, height, nr_channels;
 	stbi_set_flip_vertically_on_load(flipped);
-	unsigned char* data = stbi_load(filename, &width, &height, &nr_channels, 0);
+	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nr_channels, 0);
 	if(data) {
 		GLuint format = isAlpha ? GL_RGBA : GL_RGB;
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
@@ -95,12 +95,49 @@ void Renderer::render() {
     }
 
 	int vertex_count = 4;
-	GLfloat vertices[vertex_count * 5] = {
+	GLfloat vertices[] = {
 		/* Coordinates			Texture Pos */
-		0.5f, 0.5f, 0.0f,  		1.0f, 1.0f,
-		0.5f, -0.5f, 0.0f, 		1.0f, 0.0f,
-		-0.5f, -0.5f, 0.0f, 	0.0f, 0.0f,
-		-0.5f, 0.5f, 0.0f, 		0.0f, 1.0f
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
 
 	GLuint indices[] = {
@@ -118,6 +155,8 @@ void Renderer::render() {
 	shader->use();
 	shader->set_int("texture1", 0);
 	shader->set_int("texture2", 1);
+
+	shader->set_float("alpha", 0.1f);
 
 
     /* Create and initialize vertex buffer */
@@ -143,9 +182,32 @@ void Renderer::render() {
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
-	float time = 0.0f;
+	unsigned long long int time = 1;
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::rotate(model, (float) time / 100 * glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+	glm::mat4 view = glm::mat4(1.0f);
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+	glm::mat4 projection;
+	projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+
+	int modelLoc = glGetUniformLocation(shader->ID, "model");
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+
+	int viewLoc = glGetUniformLocation(shader->ID, "view");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+
+	int projectionLoc = glGetUniformLocation(shader->ID, "projection");
+	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+	glEnable(GL_DEPTH_TEST);
+
     while(running) {
         handle_input();
 
@@ -165,10 +227,14 @@ void Renderer::render() {
 		trans = glm::rotate(trans, time / 2000.0f, glm::vec3(0.0, 0.0, 1.0));
 		trans = glm::scale(trans, glm::vec3(1.0));
 
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::rotate(model, (float) time / 2000.0f * glm::radians(-55.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+
+		int modelLoc = glGetUniformLocation(shader->ID, "model");
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
 		GLuint transformLoc = glGetUniformLocation(shader->ID, "transform");
 		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-
-		shader->set_float("alpha", 0.2f);
 
 		glBindVertexArray(vertexArrayID);
 
@@ -176,13 +242,13 @@ void Renderer::render() {
 			glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		}
 
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
         SDL_GL_SwapWindow(render_window);
-		time += 1.0f;
+		time += 1;
     }
 
     glUseProgram(NULL);
