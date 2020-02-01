@@ -88,76 +88,57 @@ void Renderer::handle_input() {
 	}
 }
 
-void Renderer::render() {
+std::vector<Vertex3D> generateTerrain(double zOffset, TerrainGenerator gen)
+{
+	std::vector<Vertex3D> vertexVector;
+	std::vector<std::vector<TerrainQuad>> terrain = gen.Generate(100, 100, 1.0, zOffset);
+	std::array<int, 6> cornerIndices = { { 0, 1, 2, 0, 3, 2 } };
+	double size = terrain[0][0].size;
+	for(int row = 0; row < terrain.size() - 1; row++)
+	{
+		for(int i = 0; i < terrain[row].size(); i++)
+		{
+			std::array<std::array<double, 3>, 4> corners = {{
+				{ terrain[row][i].x, terrain[row][i].y, terrain[row][i].elevations[0] },
+				{ terrain[row][i].x, terrain[row + 1][i].y, terrain[row + 1][i].elevations[0] },
+				{ terrain[row][i].x + size, terrain[row + 1][i].y, terrain[row + 1][i].elevations[3] },
+				{ terrain[row][i].x + size, terrain[row][i].y, terrain[row][i].elevations[3] }
+			}};
+			for(int vertexIndex = 0; vertexIndex < cornerIndices.size(); vertexIndex++)
+			{
+				std::array<double, 3> corner = corners[cornerIndices[vertexIndex]];
+				// std::cout << "Corner: " << corner[0] << ", " << corner[1] << ", " << corner[2] << std::endl;
+				vertexVector.push_back({ corner[0], corner[1], corner[2] });
+			}
+		}
+	}
+
+	return vertexVector;
+}
+
+void Renderer::render(TerrainGenerator gen) {
     if(error) {
         Show_Error("Unknown error!");
         return;
     }
 
-	int vertex_count = 4;
-	GLfloat vertices[] = {
-		/* Coordinates			Texture Pos */
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	double z = 0.0f;
+	std::vector<Vertex3D> vertexVector = generateTerrain(z, gen);
 
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	std::cout << vertexVector[0].x << std::endl;
 
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-    };
-
-	GLuint indices[] = {
-		0, 1, 3,
-		1, 2, 3
-	};
-
-	// Texture handling.
-	GLuint texture1;
-	GLuint texture2;
-	setTexture(texture1, "container.jpg", false, false);
-	setTexture(texture2, "awesomeface.png", true, true);
+	GLfloat vertices[vertexVector.size() * 3];
+	for(int i = 0; i < vertexVector.size(); i++)
+	{
+		int glIndex = i * 3;
+		// std::cout << "X: " << vertexVector[i].x << " Y: " << vertexVector[i].y << " Z: " << vertexVector[i].z << std::endl;
+		vertices[glIndex] = vertexVector[i].x;
+		vertices[glIndex+1] = vertexVector[i].y;
+		vertices[glIndex+2] = vertexVector[i].z;
+	}
 
 	/* Set textures to fragment shader uniforms */
 	shader->use();
-	shader->set_int("texture1", 0);
-	shader->set_int("texture2", 1);
-
-	shader->set_float("alpha", 0.1f);
-
 
     /* Create and initialize vertex buffer */
     GLuint vertexBufferID, vertexArrayID;
@@ -166,34 +147,33 @@ void Renderer::render() {
 	glGenVertexArrays(1, &vertexArrayID);
 	glBindVertexArray(vertexArrayID);
 
-	glGenBuffers(1, &EBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
     glGenBuffers(1, &vertexBufferID);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	// Position attributes.
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
-	// Texture
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
 
 	unsigned long long int time = 1;
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::rotate(model, (float) time / 100 * glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+
 
 	glm::mat4 view = glm::mat4(1.0f);
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+	view = glm::translate(view, glm::vec3(-50.0f, -5.0f, z * 100));
+
+
+
+
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::translate(model, glm::vec3(0, z * 100, 0));
 
 	glm::mat4 projection;
-	projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(45.0f), 640.0f / 480.0f, 0.1f, 100.0f);
 
 	int modelLoc = glGetUniformLocation(shader->ID, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -207,34 +187,28 @@ void Renderer::render() {
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 	glEnable(GL_DEPTH_TEST);
-
+	// running = false;
     while(running) {
         handle_input();
-
-		// Texture bind.
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture1);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture2);
-
         /* MAIN RENDER HERE! */
 		shader->use();
 		/* Transformation */
 		/* Rotation and scaling */
-		glm::mat4 trans = glm::mat4(1.0f);
-		trans = glm::translate(trans, glm::vec3(0.75, -0.75, 0.0));
-		trans = glm::rotate(trans, time / 2000.0f, glm::vec3(0.0, 0.0, 1.0));
-		trans = glm::scale(trans, glm::vec3(1.0));
 
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::rotate(model, (float) time / 2000.0f * glm::radians(-55.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+		std::vector<Vertex3D> vertexVector = generateTerrain(z, gen);
+		for(int i = 0; i < vertexVector.size(); i++)
+		{
+			int glIndex = i * 3;
+			// std::cout << "X: " << vertexVector[i].x << " Y: " << vertexVector[i].y << " Z: " << vertexVector[i].z << std::endl;
+			vertices[glIndex] = vertexVector[i].x;
+			vertices[glIndex+1] = vertexVector[i].y;
+			vertices[glIndex+2] = vertexVector[i].z;
+		}
 
-		int modelLoc = glGetUniformLocation(shader->ID, "model");
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-		GLuint transformLoc = glGetUniformLocation(shader->ID, "transform");
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+	    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+	    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
 
 		glBindVertexArray(vertexArrayID);
 
@@ -244,16 +218,15 @@ void Renderer::render() {
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, vertexVector.size());
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
         SDL_GL_SwapWindow(render_window);
 		time += 1;
+		z += 0.0001;
     }
 
     glUseProgram(NULL);
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
 
     SDL_GL_DeleteContext(render_context);
     SDL_DestroyWindow(render_window);

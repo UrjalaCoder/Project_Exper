@@ -10,6 +10,7 @@
 #endif
 
 #include "../Shader/Shader.h"
+#include "../TerrainGenerator/TerrainGenerator.h"
 
 #ifndef MATRIX
 #define MATRIX
@@ -60,7 +61,7 @@ private:
 
 public:
     Renderer(int width, int height);
-    void render();
+    void render(TerrainGenerator gen);
 };
 
 
